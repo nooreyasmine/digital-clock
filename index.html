@@ -38,6 +38,53 @@
                     </div>
                 </div>
         </section>
+         <!-- 3. Stopwatch -->
+            <section id="stopwatch-tab" class="content-section">
+                <h2>Stopwatch</h2>
+                <div id="stopwatch-display" class="display-time">00:00:00.00</div>
+                <div class="controls">
+                    <button id="sw-start">Start</button>
+                    <button id="sw-stop" disabled>Stop</button>
+                    <button id="sw-reset">Reset</button>
+                </div>
+            </section>
+
+            <!-- 4. Timer (Countdown) -->
+            <section id="timer-tab" class="content-section">
+                <h2>Timer</h2>
+                <div id="timer-display" class="display-time">00:00:00</div>
+                <div class="timer-inputs">
+                    <input type="number" id="timer-hours" min="0" max="23" placeholder="HH">
+                    <input type="number" id="timer-minutes" min="0" max="59" placeholder="MM">
+                    <input type="number" id="timer-seconds" min="0" max="59" placeholder="SS">
+                </div>
+                <div class="controls">
+                    <button id="timer-start">Start</button>
+                    <button id="timer-pause" disabled>Pause</button>
+                    <button id="timer-reset">Reset</button>
+                </div>
+            </section>
+
+            <!-- 5. Alarm -->
+            <section id="alarm-tab" class="content-section">
+                <h2>Alarm</h2>
+                <div class="alarm-setup">
+                    <input type="time" id="alarm-time">
+                    <button id="alarm-set">Set Alarm</button>
+                </div>
+                <div id="alarm-status">No alarm set</div>
+                <button id="alarm-stop" class="hidden">Stop Alarm Sound</button>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Hidden audio element for Alarm/Timer alert -->
+    <audio id="alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-84.wav" loop></audio>
+
+    <script src="app.js"></script>
+</body>
+</html>
     </div>
   </body>
 </html>
