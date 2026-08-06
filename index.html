@@ -15,6 +15,29 @@
         <button class="btn-tab" data-tab="timer-tab">Timer</button>
         <button class="btn-tab" data-tab="alarm-tab">Alarm</button>
       </nav>
+      <main class="tab-content">
+        <section id="clock-tab" class="content-section active">
+          <h2>Local Time</h2>
+          <div id="local-clock" class="display-time">00:00:00</div>
+          <div id="local-date" class="display-date">Loading Date</div>
+        </section>
+        <section id="world-tab" class="content-section">
+          <h2>World Clock</h2>
+          <div class="world-grid">
+                    <div class="world-card">
+                        <h3>New York (EST)</h3>
+                        <div id="ny-time" class="world-time">00:00:00</div>
+                    </div>
+                    <div class="world-card">
+                        <h3>London (GMT)</h3>
+                        <div id="london-time" class="world-time">00:00:00</div>
+                    </div>
+                    <div class="world-card">
+                        <h3>Tokyo (JST)</h3>
+                        <div id="tokyo-time" class="world-time">00:00:00</div>
+                    </div>
+                </div>
+        </section>
     </div>
   </body>
 </html>
