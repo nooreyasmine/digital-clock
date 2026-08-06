@@ -1,1 +1,169 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
 
+body {
+    background-color: #121212;
+    color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.clock-container {
+    width: 90%;
+    max-width: 600px;
+    background: #1e1e1e;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+}
+
+/* Tabs Styling */
+.tabs {
+    display: flex;
+    background: #252525;
+    border-bottom: 2px solid #333;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 15px 5px;
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.3s, color 0.3s;
+}
+
+.tab-btn:hover {
+    color: #fff;
+    background: #2c2c2c;
+}
+
+.tab-btn.active {
+    color: #00adb5;
+    border-bottom: 2px solid #00adb5;
+    background: #1e1e1e;
+}
+
+/* Content Area */
+.tab-content {
+    padding: 30px;
+    text-align: center;
+}
+
+.content-section {
+    display: none; /* Hidden by default */
+}
+
+.content-section.active {
+    display: block; /* Visible when active */
+}
+
+/* Typography & Displays */
+h2 {
+    margin-bottom: 20px;
+    color: #00adb5;
+    font-weight: 500;
+}
+
+.display-time {
+    font-size: 3rem;
+    font-family: monospace;
+    margin: 20px 0;
+    letter-spacing: 2px;
+}
+
+.display-date {
+    font-size: 1.2rem;
+    color: #888;
+}
+
+/* World Clock Grid */
+.world-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.world-card {
+    background: #252525;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #333;
+}
+
+.world-card h3 {
+    font-size: 1rem;
+    color: #888;
+    margin-bottom: 5px;
+}
+
+.world-time {
+    font-size: 1.5rem;
+    font-family: monospace;
+    color: #00adb5;
+}
+
+/* Controls & Buttons */
+.controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    background-color: #00adb5;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+button:hover {
+    background-color: #008c95;
+}
+
+button:disabled {
+    background-color: #444;
+    color: #777;
+    cursor: not-allowed;
+}
+
+/* Inputs for Timer & Alarm */
+.timer-inputs, .alarm-setup {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+input[type="number"], input[type="time"] {
+    background: #252525;
+    border: 1px solid #444;
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 1.2rem;
+    width: 80px;
+    text-align: center;
+}
+
+input[type="time"] {
+    width: 160px;
+}
+
+.hidden {
+    display: none !important;
+}
