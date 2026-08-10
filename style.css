@@ -59,11 +59,11 @@ body {
 }
 
 .content-section {
-    display: none; /* Hidden by default */
+    display: none;
 }
 
 .content-section.active {
-    display: block; /* Visible when active */
+    display: block;
 }
 
 /* Typography & Displays */
@@ -85,17 +85,45 @@ h2 {
     color: #888;
 }
 
-/* World Clock Grid */
+/* World Clock Grid & Form */
+.world-clock-add {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+}
+
+.world-clock-add input, .world-clock-add select {
+    background: #252525;
+    border: 1px solid #444;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 5px;
+    font-size: 0.95rem;
+}
+
+.world-clock-add input {
+    flex: 1;
+    max-width: 200px;
+}
+
+#add-world-clock {
+    font-size: 1.2rem;
+    padding: 5px 15px;
+}
+
 .world-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 15px;
-    margin-top: 20px;
+    margin-top: 10px;
 }
 
 .world-card {
+    position: relative;
     background: #252525;
-    padding: 15px;
+    padding: 20px 15px 15px 15px;
     border-radius: 8px;
     border: 1px solid #333;
 }
@@ -110,6 +138,24 @@ h2 {
     font-size: 1.5rem;
     font-family: monospace;
     color: #00adb5;
+}
+
+.remove-clock-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: none;
+    border: none;
+    color: #ff5252;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 2px 6px;
+    line-height: 1;
+}
+
+.remove-clock-btn:hover {
+    color: #ff1a1a;
+    background: none;
 }
 
 /* Controls & Buttons */
