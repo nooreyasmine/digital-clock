@@ -1,44 +1,59 @@
-<DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Multi-Feature Digital Clock</title>
     <link rel="stylesheet" href="style.css">
-  </head>
-  <body>
-    <div class="nav-container">
-      <nav class="tabs">
-        <button class="tab-btn active" data-tab="clock-tab">Clock</button>
-        <button class="tab-btn" data-tab="world-tab">World Clock</button>
-        <button class="btn-tab" data-tab="stopwatch-tab">Stop Watch</button>
-        <button class="btn-tab" data-tab="timer-tab">Timer</button>
-        <button class="btn-tab" data-tab="alarm-tab">Alarm</button>
-      </nav>
-      <main class="tab-content">
-        <section id="clock-tab" class="content-section active">
-          <h2>Local Time</h2>
-          <div id="local-clock" class="display-time">00:00:00</div>
-          <div id="local-date" class="display-date">Loading Date</div>
-        </section>
-        <section id="world-tab" class="content-section">
-          <h2>World Clock</h2>
-          <div class="world-grid">
-                    <div class="world-card">
-                        <h3>New York (EST)</h3>
-                        <div id="ny-time" class="world-time">00:00:00</div>
-                    </div>
-                    <div class="world-card">
-                        <h3>London (GMT)</h3>
-                        <div id="london-time" class="world-time">00:00:00</div>
-                    </div>
-                    <div class="world-card">
-                        <h3>Tokyo (JST)</h3>
-                        <div id="tokyo-time" class="world-time">00:00:00</div>
-                    </div>
+</head>
+<body>
+    <div class="clock-container">
+        <!-- Navigation Tabs -->
+        <nav class="tabs">
+            <button class="tab-btn active" data-tab="clock-tab">Clock</button>
+            <button class="tab-btn" data-tab="world-tab">World Clock</button>
+            <button class="tab-btn" data-tab="stopwatch-tab">Stopwatch</button>
+            <button class="tab-btn" data-tab="timer-tab">Timer</button>
+            <button class="tab-btn" data-tab="alarm-tab">Alarm</button>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="tab-content">
+            
+            <!-- 1. Local Clock -->
+            <section id="clock-tab" class="content-section active">
+                <h2>Local Time</h2>
+                <div id="local-clock" class="display-time">00:00:00</div>
+                <div id="local-date" class="display-date">Loading date...</div>
+            </section>
+
+            <!-- 2. World Clock (With dynamic "+" feature) -->
+            <section id="world-tab" class="content-section">
+                <h2>World Clock</h2>
+                
+                <!-- Timezone Selector and Add Button -->
+                <div class="world-clock-add">
+                    <input type="text" id="world-city-name" placeholder="City Name (e.g. Paris)">
+                    <select id="world-timezone">
+                        <option value="Asia/Kolkata">India (IST)</option>
+                        <option value="Europe/Paris">Paris (CET)</option>
+                        <option value="America/New_York">New York (EST)</option>
+                        <option value="Europe/London">London (GMT)</option>
+                        <option value="Asia/Tokyo">Tokyo (JST)</option>
+                        <option value="America/Los_Angeles">Los Angeles (PST)</option>
+                        <option value="Asia/Singapore">Singapore (SGT)</option>
+                        <option value="Australia/Sydney">Sydney (AEST)</option>
+                        <option value="Asia/Dubai">Dubai (GST)</option>
+                        <option value="Africa/Cairo">Cairo (EET)</option>
+                    </select>
+                    <button id="add-world-clock">+</button>
                 </div>
-        </section>
-         <!-- 3. Stopwatch -->
+
+                <!-- Card container -->
+                <div id="world-grid" class="world-grid"></div>
+            </section>
+
+            <!-- 3. Stopwatch -->
             <section id="stopwatch-tab" class="content-section">
                 <h2>Stopwatch</h2>
                 <div id="stopwatch-display" class="display-time">00:00:00.00</div>
@@ -82,9 +97,6 @@
     <!-- Hidden audio element for Alarm/Timer alert -->
     <audio id="alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-84.wav" loop></audio>
 
-    <script src="app.js"></script>
+    <script src="app.js" defer></script>
 </body>
-</html>
-    </div>
-  </body>
 </html>
