@@ -10,11 +10,9 @@ tabButtons.forEach(button => {
         const targetSection = document.getElementById(targetTabId);
 
         if (targetSection) {
-            // Remove active class from all buttons and sections
             tabButtons.forEach(btn => btn.classList.remove('active'));
             sections.forEach(sec => sec.classList.remove('active'));
 
-            // Add active class to clicked button and target section
             button.classList.add('active');
             targetSection.classList.add('active');
         }
@@ -22,8 +20,69 @@ tabButtons.forEach(button => {
 });
 
 // ==========================================
-// 2. Local Clock & World Clock Logic
+// 2. Dynamic World Clock Logic
 // ==========================================
+let customClocks = [
+    { city: "New York", timezone: "America/New_York" },
+    { city: "London", timezone: "Europe/London" },
+    { city: "Tokyo", timezone: "Asia/Tokyo" }
+];
+
+const grid = document.getElementById('world-grid');
+const addClockBtn = document.getElementById('add-world-clock');
+const cityNameInput = document.getElementById('world-city-name');
+const timezoneSelect = document.getElementById('world-timezone');
+
+function renderWorldClocks() {
+    if (!grid) return;
+    grid.innerHTML = ''; // Clear out the grid to redraw
+
+    customClocks.forEach((clock, index) => {
+        const card = document.createElement('div');
+        card.className = 'world-card';
+        card.setAttribute('data-timezone', clock.timezone);
+        card.innerHTML = `
+            <h3>${clock.city}</h3>
+            <div class="world-time">00:00:00</div>
+            <button class="remove-clock-btn" onclick="removeWorldClock(${index})">×</button>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+// Globally-accessible remove function
+window.removeWorldClock = function(index) {
+    customClocks.splice(index, 1);
+    renderWorldClocks();
+};
+
+if (addClockBtn && cityNameInput && timezoneSelect) {
+    addClockBtn.addEventListener('click', () => {
+        const timezone = timezoneSelect.value;
+        // Default to timezone display name if input is left blank
+        const city = cityNameInput.value.trim() || timezoneSelect.options[timezoneSelect.selectedIndex].text.split(' ')[0];
+
+        // Avoid adding exact duplicate timezones
+        const duplicate = customClocks.some(c => c.timezone === timezone);
+        if (duplicate) {
+            alert("This timezone is already displayed.");
+            return;
+        }
+
+        customClocks.push({ city, timezone });
+        cityNameInput.value = ''; // Reset input
+        renderWorldClocks();
+    });
+}
+
+// Initial draw of starting locations
+renderWorldClocks();
+
+// ==========================================
+// 3. Local Clock & Live Updates Loop
+// ==========================================
+const alertSound = document.getElementById('alert-sound');
+
 function updateClocks() {
     const now = new Date();
 
@@ -41,37 +100,39 @@ function updateClocks() {
         localDateEl.textContent = now.toLocaleDateString(undefined, options);
     }
 
-    // World Clock Times
-    const worldOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
-    
-    const nyTimeEl = document.getElementById('ny-time');
-    if (nyTimeEl) {
-        nyTimeEl.textContent = new Intl.DateTimeFormat('en-US', { ...worldOptions, timeZone: 'America/New_York' }).format(now);
-    }
-        
-    const londonTimeEl = document.getElementById('london-time');
-    if (londonTimeEl) {
-        londonTimeEl.textContent = new Intl.DateTimeFormat('en-US', { ...worldOptions, timeZone: 'Europe/London' }).format(now);
-    }
-        
-    const tokyoTimeEl = document.getElementById('tokyo-time');
-    if (tokyoTimeEl) {
-        tokyoTimeEl.textContent = new Intl.DateTimeFormat('en-US', { ...worldOptions, timeZone: 'Asia/Tokyo' }).format(now);
-    }
+    // World Cards DOM Update (Handles default and custom added clocks)
+    const worldCards = document.querySelectorAll('.world-card');
+    worldCards.forEach(card => {
+        const timezone = card.getAttribute('data-timezone');
+        const timeEl = card.querySelector('.world-time');
+        if (timeEl && timezone) {
+            try {
+                timeEl.textContent = new Intl.DateTimeFormat('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false,
+                    timeZone: timezone
+                }).format(now);
+            } catch (e) {
+                console.error("Timezone error:", e);
+            }
+        }
+    });
 
-    // Check if the alarm should ring
+    // Continuously check for Alarm match
     checkAlarm(localTimeStr);
 }
 
-// Start the live clock updates
+// Start continuous loop
 setInterval(updateClocks, 1000);
-updateClocks(); // Run once immediately so it doesn't wait 1 second to start
+updateClocks();
 
 // ==========================================
-// 3. Stopwatch Logic
+// 4. Stopwatch Logic (Built Independently)
 // ==========================================
 let stopwatchInterval;
-let elapsedTime = 0; // Milliseconds
+let elapsedTime = 0; 
 let swStartTime;
 
 const swDisplay = document.getElementById('stopwatch-display');
@@ -84,7 +145,7 @@ function formatStopwatchTime(ms) {
     let hours = Math.floor(totalSeconds / 3600);
     let minutes = Math.floor((totalSeconds % 3600) / 60);
     let seconds = totalSeconds % 60;
-    let milliseconds = Math.floor((ms % 1000) / 10); // 2-digit milliseconds
+    let milliseconds = Math.floor((ms % 1000) / 10);
 
     return (
         String(hours).padStart(2, '0') + ':' +
@@ -100,8 +161,7 @@ if (swStartBtn && swStopBtn && swResetBtn && swDisplay) {
         stopwatchInterval = setInterval(() => {
             elapsedTime = Date.now() - swStartTime;
             swDisplay.textContent = formatStopwatchTime(elapsedTime);
-        }, 10); // Smooth update every 10ms
-
+        }, 10);
         swStartBtn.disabled = true;
         swStopBtn.disabled = false;
     });
@@ -122,11 +182,10 @@ if (swStartBtn && swStopBtn && swResetBtn && swDisplay) {
 }
 
 // ==========================================
-// 4. Timer (Countdown) Logic
+// 5. Timer (Countdown) Logic (Built Independently)
 // ==========================================
 let timerInterval;
 let timerSecondsLeft = 0;
-const alertSound = document.getElementById('alert-sound');
 
 const timerDisplay = document.getElementById('timer-display');
 const tHoursInput = document.getElementById('timer-hours');
@@ -179,7 +238,7 @@ if (timerStartBtn && timerPauseBtn && timerResetBtn) {
             if (timerSecondsLeft <= 0) {
                 clearInterval(timerInterval);
                 if (alertSound) {
-                    alertSound.play();
+                    alertSound.play().catch(e => console.log("Audio blocked: User interaction required first."));
                     alert("Timer Finished!");
                     alertSound.pause();
                     alertSound.currentTime = 0;
@@ -202,7 +261,7 @@ if (timerStartBtn && timerPauseBtn && timerResetBtn) {
 }
 
 // ==========================================
-// 5. Alarm Logic
+// 6. Alarm Logic (Built Independently)
 // ==========================================
 let alarmTime = null;
 const alarmInput = document.getElementById('alarm-time');
@@ -213,7 +272,7 @@ const alarmSetBtn = document.getElementById('alarm-set');
 if (alarmSetBtn && alarmInput && alarmStatus) {
     alarmSetBtn.addEventListener('click', () => {
         if (alarmInput.value) {
-            alarmTime = alarmInput.value; // Expected format: "HH:MM"
+            alarmTime = alarmInput.value;
             alarmStatus.textContent = `Alarm set for: ${alarmTime}`;
         }
     });
@@ -222,12 +281,11 @@ if (alarmSetBtn && alarmInput && alarmStatus) {
 function checkAlarm(localTimeStr) {
     if (!alarmTime) return;
 
-    // Grab "HH:MM" from the local time string
     const currentTimeStr = localTimeStr.substring(0, 5); 
 
     if (currentTimeStr === alarmTime) {
         if (alertSound) {
-            alertSound.play();
+            alertSound.play().catch(e => console.log("Audio blocked: User interaction required first."));
         }
         if (alarmStopBtn) {
             alarmStopBtn.classList.remove('hidden');
@@ -235,7 +293,7 @@ function checkAlarm(localTimeStr) {
         if (alarmStatus) {
             alarmStatus.textContent = "Alarm Ringing!";
         }
-        alarmTime = null; // Clear the alarm so it doesn't trigger repeatedly
+        alarmTime = null; 
     }
 }
 
