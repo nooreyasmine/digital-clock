@@ -20,7 +20,36 @@ tabButtons.forEach(button => {
 });
 
 // ==========================================
-// 2. Dynamic World Clock Logic
+// 2. World Clock Dropdown Populator
+// ==========================================
+function populateTimezones() {
+    const selector = document.getElementById('world-timezone');
+    if (!selector) return;
+
+    try {
+        // Fetch all supported timezones directly from browser database
+        const timezones = Intl.supportedValuesOf('timeZone');
+        selector.innerHTML = ''; // Clear loading option
+
+        timezones.forEach(tz => {
+            const option = document.createElement('option');
+            option.value = tz;
+            option.textContent = tz;
+            selector.appendChild(option);
+        });
+
+        // Set default dropdown selection to match the user's local timezone
+        const localTZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (timezones.includes(localTZ)) {
+            selector.value = localTZ;
+        }
+    } catch (e) {
+        console.error("Browser error loading timezones dynamically: ", e);
+    }
+}
+
+// ==========================================
+// 3. Dynamic World Clock List Logic
 // ==========================================
 let customClocks = [
     { city: "New York", timezone: "America/New_York" },
@@ -35,7 +64,7 @@ const timezoneSelect = document.getElementById('world-timezone');
 
 function renderWorldClocks() {
     if (!grid) return;
-    grid.innerHTML = ''; // Clear out the grid to redraw
+    grid.innerHTML = ''; 
 
     customClocks.forEach((clock, index) => {
         const card = document.createElement('div');
@@ -59,27 +88,34 @@ window.removeWorldClock = function(index) {
 if (addClockBtn && cityNameInput && timezoneSelect) {
     addClockBtn.addEventListener('click', () => {
         const timezone = timezoneSelect.value;
-        // Default to timezone display name if input is left blank
-        const city = cityNameInput.value.trim() || timezoneSelect.options[timezoneSelect.selectedIndex].text.split(' ')[0];
+        if (!timezone) return;
 
-        // Avoid adding exact duplicate timezones
+        // Clean name or auto-generate fallback from timezone format (e.g. "Asia/Kolkata" -> "Kolkata")
+        let city = cityNameInput.value.trim();
+        if (!city) {
+            const tzParts = timezone.split('/');
+            city = tzParts[tzParts.length - 1].replace('_', ' ');
+        }
+
+        // Avoid exact timezone duplicates
         const duplicate = customClocks.some(c => c.timezone === timezone);
         if (duplicate) {
-            alert("This timezone is already displayed.");
+            alert("This timezone is already being displayed.");
             return;
         }
 
         customClocks.push({ city, timezone });
-        cityNameInput.value = ''; // Reset input
+        cityNameInput.value = ''; // Clear custom input
         renderWorldClocks();
     });
 }
 
-// Initial draw of starting locations
+// Run initial configurations
+populateTimezones();
 renderWorldClocks();
 
 // ==========================================
-// 3. Local Clock & Live Updates Loop
+// 4. Live Clock Updates Loop
 // ==========================================
 const alertSound = document.getElementById('alert-sound');
 
@@ -100,7 +136,7 @@ function updateClocks() {
         localDateEl.textContent = now.toLocaleDateString(undefined, options);
     }
 
-    // World Cards DOM Update (Handles default and custom added clocks)
+    // World Cards loop update
     const worldCards = document.querySelectorAll('.world-card');
     worldCards.forEach(card => {
         const timezone = card.getAttribute('data-timezone');
@@ -120,16 +156,14 @@ function updateClocks() {
         }
     });
 
-    // Continuously check for Alarm match
     checkAlarm(localTimeStr);
 }
 
-// Start continuous loop
 setInterval(updateClocks, 1000);
 updateClocks();
 
 // ==========================================
-// 4. Stopwatch Logic (Built Independently)
+// 5. Stopwatch Logic (Independently Protected)
 // ==========================================
 let stopwatchInterval;
 let elapsedTime = 0; 
@@ -155,34 +189,38 @@ function formatStopwatchTime(ms) {
     );
 }
 
-if (swStartBtn && swStopBtn && swResetBtn && swDisplay) {
+if (swStartBtn) {
     swStartBtn.addEventListener('click', () => {
         swStartTime = Date.now() - elapsedTime;
         stopwatchInterval = setInterval(() => {
             elapsedTime = Date.now() - swStartTime;
-            swDisplay.textContent = formatStopwatchTime(elapsedTime);
+            if (swDisplay) swDisplay.textContent = formatStopwatchTime(elapsedTime);
         }, 10);
         swStartBtn.disabled = true;
-        swStopBtn.disabled = false;
+        if (swStopBtn) swStopBtn.disabled = false;
     });
+}
 
+if (swStopBtn) {
     swStopBtn.addEventListener('click', () => {
         clearInterval(stopwatchInterval);
-        swStartBtn.disabled = false;
-        swStopBtn.disabled = true;
-    });
-
-    swResetBtn.addEventListener('click', () => {
-        clearInterval(stopwatchInterval);
-        elapsedTime = 0;
-        swDisplay.textContent = "00:00:00.00";
-        swStartBtn.disabled = false;
+        if (swStartBtn) swStartBtn.disabled = false;
         swStopBtn.disabled = true;
     });
 }
 
+if (swResetBtn) {
+    swResetBtn.addEventListener('click', () => {
+        clearInterval(stopwatchInterval);
+        elapsedTime = 0;
+        if (swDisplay) swDisplay.textContent = "00:00:00.00";
+        if (swStartBtn) swStartBtn.disabled = false;
+        if (swStopBtn) swStopBtn.disabled = true;
+    });
+}
+
 // ==========================================
-// 5. Timer (Countdown) Logic (Built Independently)
+// 6. Timer Logic (Independently Protected)
 // ==========================================
 let timerInterval;
 let timerSecondsLeft = 0;
@@ -217,7 +255,7 @@ function resetTimerUI() {
     if (timerPauseBtn) timerPauseBtn.disabled = true;
 }
 
-if (timerStartBtn && timerPauseBtn && timerResetBtn) {
+if (timerStartBtn) {
     timerStartBtn.addEventListener('click', () => {
         if (timerSecondsLeft === 0 && tHoursInput && tMinutesInput && tSecondsInput) {
             const hrs = parseInt(tHoursInput.value) || 0;
@@ -229,7 +267,7 @@ if (timerStartBtn && timerPauseBtn && timerResetBtn) {
         if (timerSecondsLeft <= 0) return;
 
         timerStartBtn.disabled = true;
-        timerPauseBtn.disabled = false;
+        if (timerPauseBtn) timerPauseBtn.disabled = false;
 
         timerInterval = setInterval(() => {
             timerSecondsLeft--;
@@ -238,7 +276,7 @@ if (timerStartBtn && timerPauseBtn && timerResetBtn) {
             if (timerSecondsLeft <= 0) {
                 clearInterval(timerInterval);
                 if (alertSound) {
-                    alertSound.play().catch(e => console.log("Audio blocked: User interaction required first."));
+                    alertSound.play().catch(() => console.log("Audio block active"));
                     alert("Timer Finished!");
                     alertSound.pause();
                     alertSound.currentTime = 0;
@@ -247,13 +285,17 @@ if (timerStartBtn && timerPauseBtn && timerResetBtn) {
             }
         }, 1000);
     });
+}
 
+if (timerPauseBtn) {
     timerPauseBtn.addEventListener('click', () => {
         clearInterval(timerInterval);
-        timerStartBtn.disabled = false;
+        if (timerStartBtn) timerStartBtn.disabled = false;
         timerPauseBtn.disabled = true;
     });
+}
 
+if (timerResetBtn) {
     timerResetBtn.addEventListener('click', () => {
         clearInterval(timerInterval);
         resetTimerUI();
@@ -261,7 +303,7 @@ if (timerStartBtn && timerPauseBtn && timerResetBtn) {
 }
 
 // ==========================================
-// 6. Alarm Logic (Built Independently)
+// 7. Alarm Logic (Independently Protected)
 // ==========================================
 let alarmTime = null;
 const alarmInput = document.getElementById('alarm-time');
@@ -269,11 +311,11 @@ const alarmStatus = document.getElementById('alarm-status');
 const alarmStopBtn = document.getElementById('alarm-stop');
 const alarmSetBtn = document.getElementById('alarm-set');
 
-if (alarmSetBtn && alarmInput && alarmStatus) {
+if (alarmSetBtn) {
     alarmSetBtn.addEventListener('click', () => {
-        if (alarmInput.value) {
+        if (alarmInput && alarmInput.value) {
             alarmTime = alarmInput.value;
-            alarmStatus.textContent = `Alarm set for: ${alarmTime}`;
+            if (alarmStatus) alarmStatus.textContent = `Alarm set for: ${alarmTime}`;
         }
     });
 }
@@ -285,7 +327,7 @@ function checkAlarm(localTimeStr) {
 
     if (currentTimeStr === alarmTime) {
         if (alertSound) {
-            alertSound.play().catch(e => console.log("Audio blocked: User interaction required first."));
+            alertSound.play().catch(() => console.log("Audio play postponed"));
         }
         if (alarmStopBtn) {
             alarmStopBtn.classList.remove('hidden');
