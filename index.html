@@ -71,14 +71,17 @@
                 </div>
             </section>
 
-            <!-- 5. Alarm -->
+            <!-- 5. Alarm (Multiple Alarms List) -->
             <section id="alarm-tab" class="content-section">
-                <h2>Alarm</h2>
+                <h2>Alarms</h2>
                 <div class="alarm-setup">
                     <input type="time" id="alarm-time">
                     <button id="alarm-set">Set Alarm</button>
                 </div>
-                <div id="alarm-status">No alarm set</div>
+                
+                <!-- Container for listing active alarms -->
+                <div id="alarm-list" class="alarm-list"></div>
+
                 <button id="alarm-stop" class="hidden">Stop Alarm Sound</button>
             </section>
 
@@ -88,6 +91,6 @@
     <!-- Hidden audio element for Alarm/Timer alert -->
     <audio id="alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-84.wav" loop></audio>
 
-    <script src="app.js?v=1" defer></script>
+    <script src="app.js?v=2" defer></script>
 </body>
 </html>
