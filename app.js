@@ -1,14 +1,14 @@
 // =========================================================================
 // 1. GLOBAL VARIABLES & DOM SELECTORS (Declared first to avoid TDZ errors)
 // =========================================================================
-// Native Synth Beep States (No external sound files required)
+// Native Synth Beep States (Web Audio API)
 let audioCtx = null;
 let alarmBeepInterval = null;
 
-// Alarm State & Elements
-let alarmTime = null;
+// Multi-Alarm State & Elements
+let alarms = []; // Array storing alarm strings like ["14:30", "15:45"]
 const alarmInput = document.getElementById('alarm-time');
-const alarmStatus = document.getElementById('alarm-status');
+const alarmListContainer = document.getElementById('alarm-list');
 const alarmStopBtn = document.getElementById('alarm-stop');
 const alarmSetBtn = document.getElementById('alarm-set');
 
@@ -48,38 +48,46 @@ const tabButtons = document.querySelectorAll('.tab-btn');
 const sections = document.querySelectorAll('.content-section');
 
 // =========================================================================
-// 2. Browser Beep Synthesizer Function (Web Audio API)
+// 2. Browser Audio Unlocker & Synthesizer Function
 // =========================================================================
-function playAlarmBeeps() {
-    // 1. Initialize browser sound context
+// CRITICAL FIX: Explicitly unlocks Audio Context inside direct user-click callbacks
+function unlockAudioContext() {
     if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
-    
-    // Stop any existing loop first
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume().then(() => {
+            console.log("Audio Context successfully unlocked by user interaction.");
+        });
+    }
+}
+
+function playAlarmBeeps() {
+    unlockAudioContext(); // Ensure Context is active
     stopAlarmBeeps();
 
-    // 2. Set up interval to repeat beep sound every 0.5 seconds
+    // Loop a 0.3s beep tone every 0.5 seconds
     alarmBeepInterval = setInterval(() => {
+        if (!audioCtx) return;
+        
         if (audioCtx.state === 'suspended') {
             audioCtx.resume();
         }
 
-        // Create oscillator (sound wave generator) & gain (volume controller)
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
 
-        osc.type = 'sine'; // Classic retro synthesizer sound
-        osc.frequency.setValueAtTime(880, audioCtx.currentTime); // Pitch (A5 note)
+        osc.type = 'sine'; // High quality retro synth tone
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime); // Pitch (A5)
 
-        gain.gain.setValueAtTime(0.3, audioCtx.currentTime); // Vol (30%)
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3); // Quick fade out
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime); // 30% Volume
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3); // Smooth fade-out
 
         osc.connect(gain);
         gain.connect(audioCtx.destination);
 
         osc.start();
-        osc.stop(audioCtx.currentTime + 0.3); // Play sound for 0.3 seconds
+        osc.stop(audioCtx.currentTime + 0.3);
     }, 500); 
 }
 
@@ -117,7 +125,7 @@ function populateTimezones() {
 
     try {
         const timezones = Intl.supportedValuesOf('timeZone');
-        selector.innerHTML = ''; // Clear loading
+        selector.innerHTML = ''; 
 
         timezones.forEach(tz => {
             const option = document.createElement('option');
@@ -126,7 +134,7 @@ function populateTimezones() {
             selector.appendChild(option);
         });
 
-        // Default to local timezone if possible
+        // Autofill browser's local timezone
         const localTZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
         if (timezones.includes(localTZ)) {
             selector.value = localTZ;
@@ -153,7 +161,6 @@ function renderWorldClocks() {
     });
 }
 
-// Globally-accessible remove function
 window.removeWorldClock = function(index) {
     customClocks.splice(index, 1);
     renderWorldClocks();
@@ -308,6 +315,8 @@ function resetTimerUI() {
 
 if (timerStartBtn) {
     timerStartBtn.addEventListener('click', () => {
+        unlockAudioContext(); // UNLOCKS browser sound natively on click
+
         if (timerSecondsLeft === 0 && tHoursInput && tMinutesInput && tSecondsInput) {
             const hrs = parseInt(tHoursInput.value) || 0;
             const mins = parseInt(tMinutesInput.value) || 0;
@@ -327,11 +336,10 @@ if (timerStartBtn) {
             if (timerSecondsLeft <= 0) {
                 clearInterval(timerInterval);
                 
-                // Play synthesised audio beeps
+                // Play synthesised audio beeps (Unlocked above)
                 playAlarmBeeps();
                 alert("Timer Finished!");
                 
-                // Automatically stop once user dismisses the alert dialog
                 stopAlarmBeeps();
                 resetTimerUI();
             }
@@ -355,32 +363,75 @@ if (timerResetBtn) {
 }
 
 // =========================================================================
-// 8. Alarm Logic
+// 8. Multi-Alarm Logic
 // =========================================================================
-if (alarmSetBtn) {
+function renderAlarms() {
+    if (!alarmListContainer) return;
+    alarmListContainer.innerHTML = '';
+    
+    if (alarms.length === 0) {
+        alarmListContainer.innerHTML = '<div style="color: #666; font-size: 0.95rem;">No active alarms set</div>';
+        return;
+    }
+
+    // Sort alarms in chronological order
+    alarms.sort();
+
+    alarms.forEach((alarm, index) => {
+        const item = document.createElement('div');
+        item.className = 'alarm-item';
+        item.innerHTML = `
+            <span>⏰ ${alarm}</span>
+            <button class="remove-alarm-btn" onclick="removeAlarm(${index})">×</button>
+        `;
+        alarmListContainer.appendChild(item);
+    });
+}
+
+window.removeAlarm = function(index) {
+    alarms.splice(index, 1);
+    renderAlarms();
+};
+
+if (alarmSetBtn && alarmInput) {
     alarmSetBtn.addEventListener('click', () => {
-        if (alarmInput && alarmInput.value) {
-            alarmTime = alarmInput.value;
-            if (alarmStatus) alarmStatus.textContent = `Alarm set for: ${alarmTime}`;
+        unlockAudioContext(); // UNLOCKS browser sound natively on click
+
+        const selectedTime = alarmInput.value;
+        if (selectedTime) {
+            // Prevent exact duplicates in list
+            if (alarms.includes(selectedTime)) {
+                alert("This alarm is already set.");
+                return;
+            }
+
+            alarms.push(selectedTime);
+            renderAlarms();
+            alarmInput.value = ''; // Reset selector
         }
     });
 }
 
 function checkAlarm(localTimeStr) {
-    if (!alarmTime) return;
+    if (alarms.length === 0) return;
 
+    // Grab "HH:MM"
     const currentTimeStr = localTimeStr.substring(0, 5); 
 
-    if (currentTimeStr === alarmTime) {
-        // Trigger synthetic beeps
+    // Look for matching alarm time
+    const alarmIndex = alarms.indexOf(currentTimeStr);
+
+    if (alarmIndex !== -1) {
+        // Trigger synthetic sound (Unlocked above)
         playAlarmBeeps();
+        
         if (alarmStopBtn) {
             alarmStopBtn.classList.remove('hidden');
         }
-        if (alarmStatus) {
-            alarmStatus.textContent = "Alarm Ringing!";
-        }
-        alarmTime = null; 
+        
+        // Remove triggered alarm from active queue
+        alarms.splice(alarmIndex, 1);
+        renderAlarms();
     }
 }
 
@@ -388,7 +439,8 @@ if (alarmStopBtn) {
     alarmStopBtn.addEventListener('click', () => {
         stopAlarmBeeps();
         alarmStopBtn.classList.add('hidden');
-        if (alarmStatus) alarmStatus.textContent = "No alarm set";
-        if (alarmInput) alarmInput.value = '';
     });
 }
+
+// Initial draw of alarms status
+renderAlarms();
