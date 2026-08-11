@@ -1,9 +1,53 @@
-// ==========================================
-// 1. Tab Switching Logic
-// ==========================================
+// =========================================================================
+// 1. GLOBAL VARIABLES & DOM SELECTORS (Declared first to avoid TDZ errors)
+// =========================================================================
+const alertSound = document.getElementById('alert-sound');
+
+// Alarm State & Elements
+let alarmTime = null;
+const alarmInput = document.getElementById('alarm-time');
+const alarmStatus = document.getElementById('alarm-status');
+const alarmStopBtn = document.getElementById('alarm-stop');
+const alarmSetBtn = document.getElementById('alarm-set');
+
+// Stopwatch State & Elements
+let stopwatchInterval;
+let elapsedTime = 0; 
+let swStartTime;
+const swDisplay = document.getElementById('stopwatch-display');
+const swStartBtn = document.getElementById('sw-start');
+const swStopBtn = document.getElementById('sw-stop');
+const swResetBtn = document.getElementById('sw-reset');
+
+// Timer State & Elements
+let timerInterval;
+let timerSecondsLeft = 0;
+const timerDisplay = document.getElementById('timer-display');
+const tHoursInput = document.getElementById('timer-hours');
+const tMinutesInput = document.getElementById('timer-minutes');
+const tSecondsInput = document.getElementById('timer-seconds');
+const timerStartBtn = document.getElementById('timer-start');
+const timerPauseBtn = document.getElementById('timer-pause');
+const timerResetBtn = document.getElementById('timer-reset');
+
+// World Clock Elements
+let customClocks = [
+    { city: "New York", timezone: "America/New_York" },
+    { city: "London", timezone: "Europe/London" },
+    { city: "Tokyo", timezone: "Asia/Tokyo" }
+];
+const grid = document.getElementById('world-grid');
+const addClockBtn = document.getElementById('add-world-clock');
+const cityNameInput = document.getElementById('world-city-name');
+const timezoneSelect = document.getElementById('world-timezone');
+
+// Tab Buttons & Content Sections
 const tabButtons = document.querySelectorAll('.tab-btn');
 const sections = document.querySelectorAll('.content-section');
 
+// =========================================================================
+// 2. Tab Switching Logic
+// =========================================================================
 tabButtons.forEach(button => {
     button.addEventListener('click', () => {
         const targetTabId = button.getAttribute('data-tab');
@@ -19,17 +63,16 @@ tabButtons.forEach(button => {
     });
 });
 
-// ==========================================
-// 2. World Clock Dropdown Populator
-// ==========================================
+// =========================================================================
+// 3. Dynamic World Clock Logic
+// =========================================================================
 function populateTimezones() {
     const selector = document.getElementById('world-timezone');
     if (!selector) return;
 
     try {
-        // Fetch all supported timezones directly from browser database
         const timezones = Intl.supportedValuesOf('timeZone');
-        selector.innerHTML = ''; // Clear loading option
+        selector.innerHTML = ''; // Clear loading
 
         timezones.forEach(tz => {
             const option = document.createElement('option');
@@ -38,7 +81,7 @@ function populateTimezones() {
             selector.appendChild(option);
         });
 
-        // Set default dropdown selection to match the user's local timezone
+        // Default to local timezone if possible
         const localTZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
         if (timezones.includes(localTZ)) {
             selector.value = localTZ;
@@ -47,20 +90,6 @@ function populateTimezones() {
         console.error("Browser error loading timezones dynamically: ", e);
     }
 }
-
-// ==========================================
-// 3. Dynamic World Clock List Logic
-// ==========================================
-let customClocks = [
-    { city: "New York", timezone: "America/New_York" },
-    { city: "London", timezone: "Europe/London" },
-    { city: "Tokyo", timezone: "Asia/Tokyo" }
-];
-
-const grid = document.getElementById('world-grid');
-const addClockBtn = document.getElementById('add-world-clock');
-const cityNameInput = document.getElementById('world-city-name');
-const timezoneSelect = document.getElementById('world-timezone');
 
 function renderWorldClocks() {
     if (!grid) return;
@@ -90,14 +119,12 @@ if (addClockBtn && cityNameInput && timezoneSelect) {
         const timezone = timezoneSelect.value;
         if (!timezone) return;
 
-        // Clean name or auto-generate fallback from timezone format (e.g. "Asia/Kolkata" -> "Kolkata")
         let city = cityNameInput.value.trim();
         if (!city) {
             const tzParts = timezone.split('/');
             city = tzParts[tzParts.length - 1].replace('_', ' ');
         }
 
-        // Avoid exact timezone duplicates
         const duplicate = customClocks.some(c => c.timezone === timezone);
         if (duplicate) {
             alert("This timezone is already being displayed.");
@@ -105,20 +132,18 @@ if (addClockBtn && cityNameInput && timezoneSelect) {
         }
 
         customClocks.push({ city, timezone });
-        cityNameInput.value = ''; // Clear custom input
+        cityNameInput.value = ''; 
         renderWorldClocks();
     });
 }
 
-// Run initial configurations
+// Initialize World Clock Configs
 populateTimezones();
 renderWorldClocks();
 
-// ==========================================
+// =========================================================================
 // 4. Live Clock Updates Loop
-// ==========================================
-const alertSound = document.getElementById('alert-sound');
-
+// =========================================================================
 function updateClocks() {
     const now = new Date();
 
@@ -159,21 +184,13 @@ function updateClocks() {
     checkAlarm(localTimeStr);
 }
 
+// Start live clock updates
 setInterval(updateClocks, 1000);
 updateClocks();
 
-// ==========================================
-// 5. Stopwatch Logic (Independently Protected)
-// ==========================================
-let stopwatchInterval;
-let elapsedTime = 0; 
-let swStartTime;
-
-const swDisplay = document.getElementById('stopwatch-display');
-const swStartBtn = document.getElementById('sw-start');
-const swStopBtn = document.getElementById('sw-stop');
-const swResetBtn = document.getElementById('sw-reset');
-
+// =========================================================================
+// 5. Stopwatch Logic 
+// =========================================================================
 function formatStopwatchTime(ms) {
     let totalSeconds = Math.floor(ms / 1000);
     let hours = Math.floor(totalSeconds / 3600);
@@ -219,20 +236,9 @@ if (swResetBtn) {
     });
 }
 
-// ==========================================
-// 6. Timer Logic (Independently Protected)
-// ==========================================
-let timerInterval;
-let timerSecondsLeft = 0;
-
-const timerDisplay = document.getElementById('timer-display');
-const tHoursInput = document.getElementById('timer-hours');
-const tMinutesInput = document.getElementById('timer-minutes');
-const tSecondsInput = document.getElementById('timer-seconds');
-const timerStartBtn = document.getElementById('timer-start');
-const timerPauseBtn = document.getElementById('timer-pause');
-const timerResetBtn = document.getElementById('timer-reset');
-
+// =========================================================================
+// 6. Timer Logic
+// =========================================================================
 function updateTimerDisplay(totalSeconds) {
     let hrs = Math.floor(totalSeconds / 3600);
     let mins = Math.floor((totalSeconds % 3600) / 60);
@@ -302,15 +308,9 @@ if (timerResetBtn) {
     });
 }
 
-// ==========================================
-// 7. Alarm Logic (Independently Protected)
-// ==========================================
-let alarmTime = null;
-const alarmInput = document.getElementById('alarm-time');
-const alarmStatus = document.getElementById('alarm-status');
-const alarmStopBtn = document.getElementById('alarm-stop');
-const alarmSetBtn = document.getElementById('alarm-set');
-
+// =========================================================================
+// 7. Alarm Logic
+// =========================================================================
 if (alarmSetBtn) {
     alarmSetBtn.addEventListener('click', () => {
         if (alarmInput && alarmInput.value) {
