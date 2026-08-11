@@ -1,7 +1,9 @@
 // =========================================================================
 // 1. GLOBAL VARIABLES & DOM SELECTORS (Declared first to avoid TDZ errors)
 // =========================================================================
-const alertSound = document.getElementById('alert-sound');
+// Native Synth Beep States (No external sound files required)
+let audioCtx = null;
+let alarmBeepInterval = null;
 
 // Alarm State & Elements
 let alarmTime = null;
@@ -46,7 +48,50 @@ const tabButtons = document.querySelectorAll('.tab-btn');
 const sections = document.querySelectorAll('.content-section');
 
 // =========================================================================
-// 2. Tab Switching Logic
+// 2. Browser Beep Synthesizer Function (Web Audio API)
+// =========================================================================
+function playAlarmBeeps() {
+    // 1. Initialize browser sound context
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    
+    // Stop any existing loop first
+    stopAlarmBeeps();
+
+    // 2. Set up interval to repeat beep sound every 0.5 seconds
+    alarmBeepInterval = setInterval(() => {
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+
+        // Create oscillator (sound wave generator) & gain (volume controller)
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'sine'; // Classic retro synthesizer sound
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime); // Pitch (A5 note)
+
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime); // Vol (30%)
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3); // Quick fade out
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.3); // Play sound for 0.3 seconds
+    }, 500); 
+}
+
+function stopAlarmBeeps() {
+    if (alarmBeepInterval) {
+        clearInterval(alarmBeepInterval);
+        alarmBeepInterval = null;
+    }
+}
+
+// =========================================================================
+// 3. Tab Switching Logic
 // =========================================================================
 tabButtons.forEach(button => {
     button.addEventListener('click', () => {
@@ -64,7 +109,7 @@ tabButtons.forEach(button => {
 });
 
 // =========================================================================
-// 3. Dynamic World Clock Logic
+// 4. Dynamic World Clock Logic
 // =========================================================================
 function populateTimezones() {
     const selector = document.getElementById('world-timezone');
@@ -142,7 +187,7 @@ populateTimezones();
 renderWorldClocks();
 
 // =========================================================================
-// 4. Live Clock Updates Loop
+// 5. Live Clock Updates Loop
 // =========================================================================
 function updateClocks() {
     const now = new Date();
@@ -189,7 +234,7 @@ setInterval(updateClocks, 1000);
 updateClocks();
 
 // =========================================================================
-// 5. Stopwatch Logic 
+// 6. Stopwatch Logic 
 // =========================================================================
 function formatStopwatchTime(ms) {
     let totalSeconds = Math.floor(ms / 1000);
@@ -237,7 +282,7 @@ if (swResetBtn) {
 }
 
 // =========================================================================
-// 6. Timer Logic
+// 7. Timer Logic
 // =========================================================================
 function updateTimerDisplay(totalSeconds) {
     let hrs = Math.floor(totalSeconds / 3600);
@@ -281,12 +326,13 @@ if (timerStartBtn) {
 
             if (timerSecondsLeft <= 0) {
                 clearInterval(timerInterval);
-                if (alertSound) {
-                    alertSound.play().catch(() => console.log("Audio block active"));
-                    alert("Timer Finished!");
-                    alertSound.pause();
-                    alertSound.currentTime = 0;
-                }
+                
+                // Play synthesised audio beeps
+                playAlarmBeeps();
+                alert("Timer Finished!");
+                
+                // Automatically stop once user dismisses the alert dialog
+                stopAlarmBeeps();
                 resetTimerUI();
             }
         }, 1000);
@@ -309,7 +355,7 @@ if (timerResetBtn) {
 }
 
 // =========================================================================
-// 7. Alarm Logic
+// 8. Alarm Logic
 // =========================================================================
 if (alarmSetBtn) {
     alarmSetBtn.addEventListener('click', () => {
@@ -326,9 +372,8 @@ function checkAlarm(localTimeStr) {
     const currentTimeStr = localTimeStr.substring(0, 5); 
 
     if (currentTimeStr === alarmTime) {
-        if (alertSound) {
-            alertSound.play().catch(() => console.log("Audio play postponed"));
-        }
+        // Trigger synthetic beeps
+        playAlarmBeeps();
         if (alarmStopBtn) {
             alarmStopBtn.classList.remove('hidden');
         }
@@ -341,10 +386,7 @@ function checkAlarm(localTimeStr) {
 
 if (alarmStopBtn) {
     alarmStopBtn.addEventListener('click', () => {
-        if (alertSound) {
-            alertSound.pause();
-            alertSound.currentTime = 0;
-        }
+        stopAlarmBeeps();
         alarmStopBtn.classList.add('hidden');
         if (alarmStatus) alarmStatus.textContent = "No alarm set";
         if (alarmInput) alarmInput.value = '';
