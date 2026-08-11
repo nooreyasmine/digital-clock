@@ -48,25 +48,25 @@ const tabButtons = document.querySelectorAll('.tab-btn');
 const sections = document.querySelectorAll('.content-section');
 
 // =========================================================================
-// 2. Browser Audio Unlocker & Synthesizer Function
+// 2. Browser Audio Unlocker & Synthesizer Functions
 // =========================================================================
-// CRITICAL FIX: Explicitly unlocks Audio Context inside direct user-click callbacks
+// Explicitly unlocks Audio Context inside direct user-click callbacks
 function unlockAudioContext() {
     if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
     if (audioCtx.state === 'suspended') {
         audioCtx.resume().then(() => {
-            console.log("Audio Context successfully unlocked by user interaction.");
+            console.log("Audio Context successfully unlocked.");
         });
     }
 }
 
+// ALARM SOUND: Loops a beep tone every 0.5s (requires Stop button click)
 function playAlarmBeeps() {
-    unlockAudioContext(); // Ensure Context is active
+    unlockAudioContext(); 
     stopAlarmBeeps();
 
-    // Loop a 0.3s beep tone every 0.5 seconds
     alarmBeepInterval = setInterval(() => {
         if (!audioCtx) return;
         
@@ -77,11 +77,11 @@ function playAlarmBeeps() {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
 
-        osc.type = 'sine'; // High quality retro synth tone
+        osc.type = 'sine'; 
         osc.frequency.setValueAtTime(880, audioCtx.currentTime); // Pitch (A5)
 
-        gain.gain.setValueAtTime(0.3, audioCtx.currentTime); // 30% Volume
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3); // Smooth fade-out
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime); 
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3); // Fade out
 
         osc.connect(gain);
         gain.connect(audioCtx.destination);
@@ -96,6 +96,43 @@ function stopAlarmBeeps() {
         clearInterval(alarmBeepInterval);
         alarmBeepInterval = null;
     }
+}
+
+// TIMER SOUND: Schedules two clean beeps directly on the sound card clock
+// This bypasses the alert() thread-freezing restriction entirely.
+function playTimerFinishedBeep() {
+    unlockAudioContext();
+    if (!audioCtx) return;
+
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+
+    const now = audioCtx.currentTime;
+
+    // Beep 1 (Starts immediately)
+    const osc1 = audioCtx.createOscillator();
+    const gain1 = audioCtx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(880, now);
+    gain1.gain.setValueAtTime(0.3, now);
+    gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+    osc1.connect(gain1);
+    gain1.connect(audioCtx.destination);
+    osc1.start(now);
+    osc1.stop(now + 0.3);
+
+    // Beep 2 (Scheduled to start 0.4 seconds later on the hardware clock)
+    const osc2 = audioCtx.createOscillator();
+    const gain2 = audioCtx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(880, now + 0.4);
+    gain2.gain.setValueAtTime(0.3, now + 0.4);
+    gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.7);
+    osc2.connect(gain2);
+    gain2.connect(audioCtx.destination);
+    osc2.start(now + 0.4);
+    osc2.stop(now + 0.7);
 }
 
 // =========================================================================
@@ -134,7 +171,6 @@ function populateTimezones() {
             selector.appendChild(option);
         });
 
-        // Autofill browser's local timezone
         const localTZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
         if (timezones.includes(localTZ)) {
             selector.value = localTZ;
@@ -189,7 +225,6 @@ if (addClockBtn && cityNameInput && timezoneSelect) {
     });
 }
 
-// Initialize World Clock Configs
 populateTimezones();
 renderWorldClocks();
 
@@ -236,7 +271,6 @@ function updateClocks() {
     checkAlarm(localTimeStr);
 }
 
-// Start live clock updates
 setInterval(updateClocks, 1000);
 updateClocks();
 
@@ -315,7 +349,7 @@ function resetTimerUI() {
 
 if (timerStartBtn) {
     timerStartBtn.addEventListener('click', () => {
-        unlockAudioContext(); // UNLOCKS browser sound natively on click
+        unlockAudioContext(); // Pre-unlocks audio thread on interaction
 
         if (timerSecondsLeft === 0 && tHoursInput && tMinutesInput && tSecondsInput) {
             const hrs = parseInt(tHoursInput.value) || 0;
@@ -336,11 +370,12 @@ if (timerStartBtn) {
             if (timerSecondsLeft <= 0) {
                 clearInterval(timerInterval);
                 
-                // Play synthesised audio beeps (Unlocked above)
-                playAlarmBeeps();
+                // Play double beep natively on the hardware thread
+                playTimerFinishedBeep();
+                
+                // Show the alert box (will block the main thread, but sound is already playing!)
                 alert("Timer Finished!");
                 
-                stopAlarmBeeps();
                 resetTimerUI();
             }
         }, 1000);
@@ -374,7 +409,6 @@ function renderAlarms() {
         return;
     }
 
-    // Sort alarms in chronological order
     alarms.sort();
 
     alarms.forEach((alarm, index) => {
@@ -395,11 +429,10 @@ window.removeAlarm = function(index) {
 
 if (alarmSetBtn && alarmInput) {
     alarmSetBtn.addEventListener('click', () => {
-        unlockAudioContext(); // UNLOCKS browser sound natively on click
+        unlockAudioContext(); 
 
         const selectedTime = alarmInput.value;
         if (selectedTime) {
-            // Prevent exact duplicates in list
             if (alarms.includes(selectedTime)) {
                 alert("This alarm is already set.");
                 return;
@@ -407,7 +440,7 @@ if (alarmSetBtn && alarmInput) {
 
             alarms.push(selectedTime);
             renderAlarms();
-            alarmInput.value = ''; // Reset selector
+            alarmInput.value = ''; 
         }
     });
 }
@@ -415,21 +448,16 @@ if (alarmSetBtn && alarmInput) {
 function checkAlarm(localTimeStr) {
     if (alarms.length === 0) return;
 
-    // Grab "HH:MM"
     const currentTimeStr = localTimeStr.substring(0, 5); 
-
-    // Look for matching alarm time
     const alarmIndex = alarms.indexOf(currentTimeStr);
 
     if (alarmIndex !== -1) {
-        // Trigger synthetic sound (Unlocked above)
         playAlarmBeeps();
         
         if (alarmStopBtn) {
             alarmStopBtn.classList.remove('hidden');
         }
         
-        // Remove triggered alarm from active queue
         alarms.splice(alarmIndex, 1);
         renderAlarms();
     }
@@ -442,5 +470,4 @@ if (alarmStopBtn) {
     });
 }
 
-// Initial draw of alarms status
 renderAlarms();
